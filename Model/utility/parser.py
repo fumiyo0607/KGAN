@@ -6,6 +6,24 @@ Wang Xiang et al. KGAT: Knowledge Graph Attention Network for Recommendation. In
 '''
 import argparse
 
+# params
+model_type      = 'kgat' 
+alg_type        = 'bi' 
+dataset         = 'amazon-book' 
+regs            = '[1e-5,1e-5]' 
+layer_size      = '[64,32,16]' 
+embed_size      = '64' 
+lr              = '0.0001' 
+epoch           = '400' 
+verbose         = '1' 
+save_flag       = '1' 
+pretrain        = '-1' 
+batch_size      = '1024' 
+node_dropout    = '[0.1]' 
+mess_dropout    = '[0.1,0.1,0.1]' 
+use_att         = 'True' 
+use_kge         = 'True'
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Run KGAT.")
     parser.add_argument('--weights_path', nargs='?', default='',
@@ -75,4 +93,23 @@ def parse_args():
     parser.add_argument('--use_kge', type=bool, default=True,
                         help='whether using knowledge graph embedding')
 
-    return parser.parse_args()
+    args = parser.parse_args( args = [
+        '--model_type',     model_type,
+        '--alg_type',       alg_type,
+        '--dataset',        dataset,
+        '--regs',           regs,
+        '--layer_size',     layer_size,
+        '--embed_size',     embed_size,
+        '--lr',             lr,
+        '--epoch',          epoch,
+        '--verbose',        verbose,
+        '--save_flag',      save_flag,
+        '--pretrain',       pretrain,
+        '--batch_size',     batch_size,
+        '--node_dropout',   node_dropout,
+        '--mess_dropout',   mess_dropout,
+        '--use_att',        use_att,
+        '--use_kge',        use_kge
+    ])
+
+    return args
