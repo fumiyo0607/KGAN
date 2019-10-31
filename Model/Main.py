@@ -34,6 +34,10 @@ def load_pretrained_data(args):
 
 
 if __name__ == '__main__':
+
+    print('main script called ... !!')
+    # append path to utility
+
     # get argument settings.
     tf.set_random_seed(2019)
     np.random.seed(2019)
