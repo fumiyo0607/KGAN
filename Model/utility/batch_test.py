@@ -9,6 +9,7 @@ from utility.parser import parse_args
 import multiprocessing
 import heapq
 import numpy as np
+from collections import defaultdict
 
 from utility.loader_bprmf import BPRMF_loader
 
@@ -18,6 +19,8 @@ from utility.loader_kgat import KGAT_loader
 from utility.loader_cfkg import CFKG_loader
 
 cores = multiprocessing.cpu_count() // 2
+
+each_user_ret =defaultdict(dict)
 
 args = parse_args()
 Ks = eval(args.Ks)
@@ -97,7 +100,7 @@ def ranklist_by_sorted(user_pos_test, test_items, rating, Ks):
     return r, auc
 
 
-def get_performance(user_pos_test, r, auc, Ks):
+def get_performance(user_id, user_pos_test, r, auc, Ks):
     precision, recall, ndcg, hit_ratio = [], [], [], []
 
     for K in Ks:
@@ -106,7 +109,7 @@ def get_performance(user_pos_test, r, auc, Ks):
         ndcg.append(metrics.ndcg_at_k(r, K))
         hit_ratio.append(metrics.hit_at_k(r, K))
 
-    return {'recall': np.array(recall), 'precision': np.array(precision),
+    return {'user_id':user_id, 'recall': np.array(recall), 'precision': np.array(precision),
             'ndcg': np.array(ndcg), 'hit_ratio': np.array(hit_ratio), 'auc': auc}
 
 
@@ -142,10 +145,26 @@ def test_one_user(x):
     #     exit()
     # # .......checking.......
 
-    return get_performance(user_pos_test, r, auc, Ks)
+    '''
+    ex. user_id = 998
+    {
+        'recall': array([0., 0., 0., 0., 0.]), 
+        'precision': array([0., 0., 0., 0., 0.]), 
+        'ndcg': array([0., 0., 0., 0., 0.]), 
+        'hit_ratio': array([0., 0., 0., 0., 0.]), 
+        'auc': 0.0
+    }
+    '''
+
+    ret = get_performance(u, user_pos_test, r, auc, Ks)
+
+    return ret
 
 
 def test(sess, model, users_to_test, drop_flag=False, batch_test_flag=False):
+
+    each_user_ret = defaultdict(dict)
+
     result = {'precision': np.zeros(len(Ks)), 'recall': np.zeros(len(Ks)), 'ndcg': np.zeros(len(Ks)),
               'hit_ratio': np.zeros(len(Ks)), 'auc': 0.}
 
@@ -169,6 +188,7 @@ def test(sess, model, users_to_test, drop_flag=False, batch_test_flag=False):
     count = 0
 
     for u_batch_id in range(n_user_batchs):
+
         start = u_batch_id * u_batch_size
         end = (u_batch_id + 1) * u_batch_size
 
@@ -209,9 +229,14 @@ def test(sess, model, users_to_test, drop_flag=False, batch_test_flag=False):
 
         user_batch_rating_uid = zip(rate_batch, user_batch)
         batch_result = pool.map(test_one_user, user_batch_rating_uid)
+        # print('batch_result')
+        # print(len(batch_result))
         count += len(batch_result)
 
         for re in batch_result:
+            user_id = re['user_id']
+            each_user_ret[user_id] = re
+
             result['precision'] += re['precision']/n_test_users
             result['recall'] += re['recall']/n_test_users
             result['ndcg'] += re['ndcg']/n_test_users
@@ -221,4 +246,4 @@ def test(sess, model, users_to_test, drop_flag=False, batch_test_flag=False):
 
     assert count == n_test_users
     pool.close()
-    return result
+    return result, each_user_ret

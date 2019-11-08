@@ -8,6 +8,8 @@ import tensorflow as tf
 from utility.helper import *
 from utility.batch_test import *
 from time import time
+from collections import defaultdict
+import pickle
 
 from BPRMF import BPRMF
 from CKE import CKE
@@ -34,10 +36,7 @@ def load_pretrained_data(args):
 
 
 if __name__ == '__main__':
-
-    print('main script called ... !!')
-    # append path to utility
-
+    print('main ...')
     # get argument settings.
     tf.set_random_seed(2019)
     np.random.seed(2019)
@@ -143,7 +142,7 @@ if __name__ == '__main__':
             if args.report != 1:
                 users_to_test = list(data_generator.test_user_dict.keys())
 
-                ret = test(sess, model, users_to_test, drop_flag=False, batch_test_flag=batch_test_flag)
+                ret, each_user_ret = test(sess, model, users_to_test, drop_flag=False, batch_test_flag=batch_test_flag)
                 cur_best_pre_0 = ret['recall'][0]
 
                 pretrain_ret = 'pretrained model recall=[%.5f, %.5f], precision=[%.5f, %.5f], hit=[%.5f, %.5f],' \
@@ -208,7 +207,7 @@ if __name__ == '__main__':
                                                                        args.loss_type))
 
         for i, users_to_test in enumerate(users_to_test_list):
-            ret = test(sess, model, users_to_test, drop_flag=False, batch_test_flag=batch_test_flag)
+            ret, each_user_ret = test(sess, model, users_to_test, drop_flag=False, batch_test_flag=batch_test_flag)
 
             final_perf = "recall=[%s], precision=[%s], hit=[%s], ndcg=[%s]" % \
                          ('\t'.join(['%.5f' % r for r in ret['recall']]),
@@ -297,12 +296,24 @@ if __name__ == '__main__':
 
         """
         *********************************************************
+        show_step ごとにテストする
         Test.
         """
         t2 = time()
         users_to_test = list(data_generator.test_user_dict.keys())
 
-        ret = test(sess, model, users_to_test, drop_flag=False, batch_test_flag=batch_test_flag)
+        ret, each_user_ret = test(sess, model, users_to_test, drop_flag=False, batch_test_flag=batch_test_flag)
+
+        save_path = '%s_each_user_ret/' % (args.dataset)
+        ensureDir(save_path)
+        
+        file_name = 'epoch=%s.pickle' % (str(epoch))
+
+        with open(save_path + file_name, mode='wb') as f:
+            pickle.dump(each_user_ret, f)
+        
+        print('saved each users result as %s ...!' % (file_name))
+
 
         """
         *********************************************************
@@ -357,12 +368,9 @@ if __name__ == '__main__':
     ensureDir(save_path)
     f = open(save_path, 'a')
 
-    f.write('embed_size=%d, lr=%.4f, layer_size=%s, node_dropout=%s, mess_dropout=%s, regs=%s, loss_type=%s, n_memory=%d,'
-            'item_update_mode=%s, using_all_hops=%s, adj_type=%s, use_att=%s, use_kge=%s\n\t%s\n'
-            % (args.embed_size, args.lr, args.layer_size, args.node_dropout, args.mess_dropout, args.regs, args.loss_type, args.n_memory,
-               args.item_update_mode, args.using_all_hops, args.adj_type, args.use_att, args.use_kge, final_perf))
+    f.write('embed_size=%d, lr=%.4f, layer_size=%s, node_dropout=%s, mess_dropout=%s, regs=%s, adj_type=%s, use_att=%s, use_kge=%s\n\t%s\n'
+            % (args.embed_size, args.lr, args.layer_size, args.node_dropout, args.mess_dropout, args.regs, args.adj_type, args.use_att, args.use_kge, final_perf))
     f.close()
-
 
 
 
