@@ -54,8 +54,14 @@ def ranklist_by_heapq(user_pos_test, test_items, rating, Ks):
     item_score = {}
     for i in test_items:
         item_score[i] = rating[i]
-
+    
     K_max = max(Ks)
+
+    item_score_sorted = sorted(item_score.items(), key=lambda x:x[1], reverse=True)
+
+    top_N = 20
+    top_N_items = item_score_sorted[:top_N]
+
     K_max_item_score = heapq.nlargest(K_max, item_score, key=item_score.get)
 
     r = []
@@ -64,8 +70,9 @@ def ranklist_by_heapq(user_pos_test, test_items, rating, Ks):
             r.append(1)
         else:
             r.append(0)
+
     auc = 0.
-    return r, auc
+    return r, auc, top_N_items
 
 def get_auc(item_score, user_pos_test):
     item_score = sorted(item_score.items(), key=lambda kv: kv[1])
@@ -131,7 +138,7 @@ def test_one_user(x):
     test_items = list(all_items - set(training_items))
 
     if args.test_flag == 'part':
-        r, auc = ranklist_by_heapq(user_pos_test, test_items, rating, Ks)
+        r, auc, top_N_items = ranklist_by_heapq(user_pos_test, test_items, rating, Ks)
     else:
         r, auc = ranklist_by_sorted(user_pos_test, test_items, rating, Ks)
 
@@ -157,6 +164,9 @@ def test_one_user(x):
     '''
 
     ret = get_performance(u, user_pos_test, r, auc, Ks)
+
+    if args.test_flag == 'part':
+        ret['top_N_items'] = top_N_items
 
     return ret
 

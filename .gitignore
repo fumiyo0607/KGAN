@@ -4,3 +4,5 @@ Data/
 .ipynb_checkpoints/
 weights/
 pretrain/
+data/
+LFM-1b/
