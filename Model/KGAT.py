@@ -134,7 +134,8 @@ class KGAT(object):
 
         all_weights['relation_embed'] = tf.Variable(initializer([self.n_relations, self.kge_dim]),
                                                     name='relation_embed')
-        all_weights['trans_W'] = tf.Variable(initializer([self.n_relations, self.emb_dim, self.kge_dim]))
+        all_weights['trans_W'] = tf.Variable(initializer([self.n_relations, self.emb_dim, self.kge_dim]),
+                                                         name='trans_W')
 
         self.weight_size_list = [self.emb_dim] + self.weight_size
 

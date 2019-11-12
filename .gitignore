@@ -6,5 +6,5 @@ weights/
 pretrain/
 data/
 LFM-1b/
-malel_last-fm_epoch=300/
+model_last-fm_epoch=300/
 model/
