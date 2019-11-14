@@ -59,7 +59,7 @@ def ranklist_by_heapq(user_pos_test, test_items, rating, Ks):
 
     item_score_sorted = sorted(item_score.items(), key=lambda x:x[1], reverse=True)
 
-    top_N = 20
+    top_N = 100
     top_N_items = item_score_sorted[:top_N]
 
     K_max_item_score = heapq.nlargest(K_max, item_score, key=item_score.get)

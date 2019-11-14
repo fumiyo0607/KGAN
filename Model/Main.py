@@ -280,13 +280,23 @@ if __name__ == '__main__':
 
             if args.use_att is True:
                 # updating attentive laplacian matrix.
-                model.update_attentive_A(sess)
+                A_matrix = model.update_attentive_A(sess)
+
+                save_path = '%s_attention_score/' % (args.dataset)
+                ensureDir(save_path)
+        
+                file_name = 'attention_score_epoch=%s.pickle' % (str(epoch))
+
+                with open(save_path + file_name, mode='wb') as f:
+                    pickle.dump(A_matrix, f)
+                
+                print('attention score successfully saved ..!!')
 
         if np.isnan(loss) == True:
             print('ERROR: loss@phase2 is nan.')
             sys.exit()
 
-        show_step = 1 #default = 10 
+        show_step = 10 #default = 10 
         if (epoch + 1) % show_step != 0:
             if args.verbose > 0 and epoch % args.verbose == 0:
                 perf_str = 'Epoch %d [%.1fs]: train==[%.5f=%.5f + %.5f + %.5f]' % (

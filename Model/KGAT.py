@@ -134,8 +134,11 @@ class KGAT(object):
 
         all_weights['relation_embed'] = tf.Variable(initializer([self.n_relations, self.kge_dim]),
                                                     name='relation_embed')
-        all_weights['trans_W'] = tf.Variable(initializer([self.n_relations, self.emb_dim, self.kge_dim]),
-                                                         name='trans_W')
+                                                    
+        # all_weights['trans_W'] = tf.Variable(initializer([self.n_relations, self.emb_dim, self.kge_dim]),
+        #                                                  name='trans_W')
+        
+        all_weights['trans_W'] = tf.Variable(initializer([self.n_relations, self.emb_dim, self.kge_dim]))
 
         self.weight_size_list = [self.emb_dim] + self.weight_size
 
@@ -453,7 +456,12 @@ class KGAT(object):
 
         rows = new_A_indices[:, 0]
         cols = new_A_indices[:, 1]
+
         self.A_in = sp.coo_matrix((new_A_values, (rows, cols)), shape=(self.n_users + self.n_entities,
                                                                        self.n_users + self.n_entities))
+        A_matrix = self.A_in 
+
         if self.alg_type in ['org', 'gcn']:
             self.A_in.setdiag(1.)
+        
+        return A_matrix
