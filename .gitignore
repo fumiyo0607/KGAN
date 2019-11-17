@@ -10,3 +10,4 @@ model_last-fm_epoch=300/
 model/
 result_1114/
 attention_score/
+attention_path/
