@@ -11,3 +11,5 @@ model/
 result_1114/
 attention_score/
 attention_path/
+each_user_result/
+users/
