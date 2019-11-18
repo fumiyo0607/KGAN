@@ -77,7 +77,7 @@ for user in tqdm(users):
 
                             total_att_score = user_to_item_att + item_to_entity_att + entity_to_rec_item_att
 
-                            if !( rec_item_id in rec_item_path[user]) or ( total_att_score > max_att) :
+                            if not rec_item_id in rec_item_path[user] or ( total_att_score > max_att) :
 
                                 max_att = total_att_score 
 
