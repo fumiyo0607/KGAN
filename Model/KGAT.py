@@ -120,6 +120,7 @@ class KGAT(object):
         if self.pretrain_data is None:
             all_weights['user_embed'] = tf.Variable(initializer([self.n_users, self.emb_dim]), name='user_embed')
             all_weights['entity_embed'] = tf.Variable(initializer([self.n_entities, self.emb_dim]), name='entity_embed')
+            all_weights['trans_W'] = tf.Variable(initializer([self.n_relations, self.emb_dim, self.kge_dim]))
             print('using xavier initialization')
         else:
             all_weights['user_embed'] = tf.Variable(initial_value=self.pretrain_data['user_embed'], trainable=True,
@@ -130,15 +131,12 @@ class KGAT(object):
 
             all_weights['entity_embed'] = tf.Variable(initial_value=tf.concat([item_embed, other_embed], 0),
                                                       trainable=True, name='entity_embed', dtype=tf.float32)
+
+            all_weights['trans_W'] = tf.Variable(initial_value=self.pretrain_data['trans_W'], trainable=True,
+                                                    name='trans_W', dtype=tf.float32)
             print('using pretrained initialization')
 
-        all_weights['relation_embed'] = tf.Variable(initializer([self.n_relations, self.kge_dim]),
-                                                    name='relation_embed')
-                                                    
-        # all_weights['trans_W'] = tf.Variable(initializer([self.n_relations, self.emb_dim, self.kge_dim]),
-        #                                                  name='trans_W')
-        
-        all_weights['trans_W'] = tf.Variable(initializer([self.n_relations, self.emb_dim, self.kge_dim]))
+    
 
         self.weight_size_list = [self.emb_dim] + self.weight_size
 
