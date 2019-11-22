@@ -51,6 +51,8 @@ class KGAT(object):
 
         self._statistics_params()
 
+        
+
     def _parse_args(self, data_config, pretrain_data, args):
         # argument settings
         self.model_type = 'kgat'
@@ -120,7 +122,6 @@ class KGAT(object):
         if self.pretrain_data is None:
             all_weights['user_embed'] = tf.Variable(initializer([self.n_users, self.emb_dim]), name='user_embed')
             all_weights['entity_embed'] = tf.Variable(initializer([self.n_entities, self.emb_dim]), name='entity_embed')
-            all_weights['trans_W'] = tf.Variable(initializer([self.n_relations, self.emb_dim, self.kge_dim]))
             print('using xavier initialization')
         else:
             all_weights['user_embed'] = tf.Variable(initial_value=self.pretrain_data['user_embed'], trainable=True,
@@ -131,12 +132,10 @@ class KGAT(object):
 
             all_weights['entity_embed'] = tf.Variable(initial_value=tf.concat([item_embed, other_embed], 0),
                                                       trainable=True, name='entity_embed', dtype=tf.float32)
-
-            all_weights['trans_W'] = tf.Variable(initial_value=self.pretrain_data['trans_W'], trainable=True,
-                                                    name='trans_W', dtype=tf.float32)
             print('using pretrained initialization')
 
-    
+        all_weights['relation_embed'] = tf.Variable(initializer([self.n_relations, self.kge_dim]), name='relation_embed')
+        all_weights['trans_W'] = tf.Variable(initializer([self.n_relations, self.emb_dim, self.kge_dim]), name='trans_W')
 
         self.weight_size_list = [self.emb_dim] + self.weight_size
 
@@ -168,7 +167,7 @@ class KGAT(object):
 
         elif self.alg_type in ['graphsage']:
             self.ua_embeddings, self.ea_embeddings = self._create_graphsage_embed()
-
+        
         self.u_e = tf.nn.embedding_lookup(self.ua_embeddings, self.users)
         self.pos_i_e = tf.nn.embedding_lookup(self.ea_embeddings, self.pos_items)
         self.neg_i_e = tf.nn.embedding_lookup(self.ea_embeddings, self.neg_items)
@@ -199,11 +198,12 @@ class KGAT(object):
         h_e = tf.reshape(tf.matmul(h_e, trans_M), [-1, self.kge_dim])
         pos_t_e = tf.reshape(tf.matmul(pos_t_e, trans_M), [-1, self.kge_dim])
         neg_t_e = tf.reshape(tf.matmul(neg_t_e, trans_M), [-1, self.kge_dim])
-
-        h_e = tf.math.l2_normalize(h_e, axis=1)
-        r_e = tf.math.l2_normalize(r_e, axis=1)
-        pos_t_e = tf.math.l2_normalize(pos_t_e, axis=1)
-        neg_t_e = tf.math.l2_normalize(neg_t_e, axis=1)
+        
+        # Remove the l2 normalization terms
+        # h_e = tf.math.l2_normalize(h_e, axis=1)
+        # r_e = tf.math.l2_normalize(r_e, axis=1)
+        # pos_t_e = tf.math.l2_normalize(pos_t_e, axis=1)
+        # neg_t_e = tf.math.l2_normalize(neg_t_e, axis=1)
 
         return h_e, r_e, pos_t_e, neg_t_e
 
@@ -214,8 +214,10 @@ class KGAT(object):
         regularizer = tf.nn.l2_loss(self.u_e) + tf.nn.l2_loss(self.pos_i_e) + tf.nn.l2_loss(self.neg_i_e)
         regularizer = regularizer / self.batch_size
 
-        maxi = tf.log(tf.nn.sigmoid(pos_scores - neg_scores))
-        base_loss = tf.negative(tf.reduce_mean(maxi))
+        # Using the softplus as BPR loss to avoid the nan error.
+        base_loss = tf.reduce_mean(tf.nn.softplus(-(pos_scores - neg_scores)))
+        # maxi = tf.log(tf.nn.sigmoid(pos_scores - neg_scores))
+        # base_loss = tf.negative(tf.reduce_mean(maxi))
 
         self.base_loss = base_loss
         self.kge_loss = tf.constant(0.0, tf.float32, [1])
@@ -232,12 +234,16 @@ class KGAT(object):
 
         pos_kg_score = _get_kg_score(self.h_e, self.r_e, self.pos_t_e)
         neg_kg_score = _get_kg_score(self.h_e, self.r_e, self.neg_t_e)
+        
+        # Using the softplus as BPR loss to avoid the nan error.
+        kg_loss = tf.reduce_mean(tf.nn.softplus(-(neg_kg_score - pos_kg_score)))
+        # maxi = tf.log(tf.nn.sigmoid(neg_kg_score - pos_kg_score))
+        # kg_loss = tf.negative(tf.reduce_mean(maxi))
 
-        maxi = tf.log(tf.nn.sigmoid(neg_kg_score - pos_kg_score))
-        kg_loss = tf.negative(tf.reduce_mean(maxi))
+
         kg_reg_loss = tf.nn.l2_loss(self.h_e) + tf.nn.l2_loss(self.r_e) + \
                       tf.nn.l2_loss(self.pos_t_e) + tf.nn.l2_loss(self.neg_t_e)
-        kg_reg_loss = kg_reg_loss / self.batch_size
+        kg_reg_loss = kg_reg_loss / self.batch_size_kg
 
         self.kge_loss2 = kg_loss
         self.reg_loss2 = self.regs[1] * kg_reg_loss
@@ -259,6 +265,7 @@ class KGAT(object):
             temp_embed = []
             for f in range(self.n_fold):
                 temp_embed.append(tf.sparse_tensor_dense_matmul(A_fold_hat[f], ego_embeddings))
+
 
             # sum messages of neighbors.
             side_embeddings = tf.concat(temp_embed, 0)
@@ -394,9 +401,9 @@ class KGAT(object):
         t_e = tf.reshape(tf.matmul(t_e, trans_M), [-1, self.kge_dim])
 
         # l2-normalize
-        h_e = tf.math.l2_normalize(h_e, axis=1)
-        r_e = tf.math.l2_normalize(r_e, axis=1)
-        t_e = tf.math.l2_normalize(t_e, axis=1)
+        # h_e = tf.math.l2_normalize(h_e, axis=1)
+        # r_e = tf.math.l2_normalize(r_e, axis=1)
+        # t_e = tf.math.l2_normalize(t_e, axis=1)
 
         kg_score = tf.reduce_sum(tf.multiply(t_e, tf.tanh(h_e + r_e)), 1)
 
@@ -454,12 +461,9 @@ class KGAT(object):
 
         rows = new_A_indices[:, 0]
         cols = new_A_indices[:, 1]
-
         self.A_in = sp.coo_matrix((new_A_values, (rows, cols)), shape=(self.n_users + self.n_entities,
                                                                        self.n_users + self.n_entities))
-        A_matrix = self.A_in 
-
         if self.alg_type in ['org', 'gcn']:
             self.A_in.setdiag(1.)
         
-        return A_matrix
+        return self.A_in

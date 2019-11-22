@@ -8,7 +8,6 @@ import tensorflow as tf
 from utility.helper import *
 from utility.batch_test import *
 from time import time
-from collections import defaultdict
 import pickle
 
 from BPRMF import BPRMF
@@ -36,7 +35,6 @@ def load_pretrained_data(args):
 
 
 if __name__ == '__main__':
-    print('main ...')
     # get argument settings.
     tf.set_random_seed(2019)
     np.random.seed(2019)
@@ -65,6 +63,23 @@ if __name__ == '__main__':
         config['all_v_list'] = data_generator.all_v_list
 
     t0 = time()
+
+    
+    """
+    *********************************************************
+    Save data config.
+    """
+
+    save_path = '%s_config/' % (args.dataset)
+    ensureDir(save_path)
+        
+    file_name = 'config.pickle'
+
+    with open(save_path + file_name, mode='wb') as f:
+        pickle.dump(config, f)
+        
+    print('saved data config ...!')
+
 
     """
     *********************************************************
@@ -290,23 +305,21 @@ if __name__ == '__main__':
                 with open(save_path + file_name, mode='wb') as f:
                     pickle.dump(A_matrix, f)
                 
-                print('attention score successfully saved ..!!')
+                print('attentive Laplacian matrix successfully saved ..!!')
 
         if np.isnan(loss) == True:
             print('ERROR: loss@phase2 is nan.')
             sys.exit()
 
-        show_step = 10 #default = 10 
+        show_step = 10
         if (epoch + 1) % show_step != 0:
             if args.verbose > 0 and epoch % args.verbose == 0:
                 perf_str = 'Epoch %d [%.1fs]: train==[%.5f=%.5f + %.5f + %.5f]' % (
                     epoch, time() - t1, loss, base_loss, kge_loss, reg_loss)
                 print(perf_str)
             continue
-
         """
         *********************************************************
-        show_step ごとにテストする
         Test.
         """
         t2 = time()
@@ -323,7 +336,6 @@ if __name__ == '__main__':
             pickle.dump(each_user_ret, f)
         
         print('saved each users result as %s ...!' % (file_name))
-
 
         """
         *********************************************************
@@ -346,7 +358,7 @@ if __name__ == '__main__':
             print(perf_str)
 
         cur_best_pre_0, stopping_step, should_stop = early_stopping(ret['recall'][0], cur_best_pre_0,
-                                                                    stopping_step, expected_order='acc', flag_step=5)
+                                                                    stopping_step, expected_order='acc', flag_step=10)
 
         # *********************************************************
         # early stopping when cur_best_pre_0 is decreasing for ten successive steps.
@@ -374,17 +386,26 @@ if __name__ == '__main__':
                   '\t'.join(['%.5f' % r for r in ndcgs[idx]]))
     print(final_perf)
 
+    """
+    *********************************************************
+    Save params as np.
+    """
+
+    user_embed, entity_embed, relation_embed, trans_W_embed = sess.run(
+                        [model.weights['user_embed'], model.weights['entity_embed'], model.weights['relation_embed'], model.weights['trans_W']],
+                        feed_dict={})
+
+    temp_save_path = '%sprams/%s/%s.npz' % (args.proj_path, args.dataset, args.model_type)
+    ensureDir(temp_save_path)
+    np.savez(temp_save_path, user_embed=user_embed, entity_embed=entity_embed, relation_embed=relation_embed, trans_W_embed=trans_W_embed)
+    print('save the weights of kgat in path: ', temp_save_path)
+                
+
     save_path = '%soutput/%s/%s.result' % (args.proj_path, args.dataset, model.model_type)
     ensureDir(save_path)
     f = open(save_path, 'a')
 
-    f.write('embed_size=%d, lr=%.4f, layer_size=%s, node_dropout=%s, mess_dropout=%s, regs=%s, adj_type=%s, use_att=%s, use_kge=%s\n\t%s\n'
-            % (args.embed_size, args.lr, args.layer_size, args.node_dropout, args.mess_dropout, args.regs, args.adj_type, args.use_att, args.use_kge, final_perf))
+
+    f.write('embed_size=%d, lr=%.4f, layer_size=%s, node_dropout=%s, mess_dropout=%s, regs=%s, adj_type=%s, use_att=%s, use_kge=%s, pretrain=%d\n\t%s\n'
+            % (args.embed_size, args.lr, args.layer_size, args.node_dropout, args.mess_dropout, args.regs, args.adj_type, args.use_att, args.use_kge, args.pretrain, final_perf))
     f.close()
-
-
-
-
-
-
-

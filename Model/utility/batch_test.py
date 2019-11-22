@@ -239,8 +239,7 @@ def test(sess, model, users_to_test, drop_flag=False, batch_test_flag=False):
 
         user_batch_rating_uid = zip(rate_batch, user_batch)
         batch_result = pool.map(test_one_user, user_batch_rating_uid)
-        # print('batch_result')
-        # print(len(batch_result))
+     
         count += len(batch_result)
 
         for re in batch_result:
