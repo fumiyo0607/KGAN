@@ -28,6 +28,8 @@ class KGAT_loader(Data):
 
 
     def _get_relational_adj_list(self):
+        # TODO: change this function ...
+
         t1 = time()
         adj_mat_list = []
         adj_r_list = []
@@ -47,7 +49,8 @@ class KGAT_loader(Data):
             b_adj = sp.coo_matrix((b_vals, (b_rows, b_cols)), shape=(n_all, n_all))
 
             return a_adj, b_adj
-
+        
+        # review data 
         R, R_inv = _np_mat2sp_adj(self.train_data, row_pre=0, col_pre=self.n_users)
         adj_mat_list.append(R)
         adj_r_list.append(0)
@@ -57,7 +60,8 @@ class KGAT_loader(Data):
         print('\tconvert ratings into adj mat done.')
 
         for r_id in self.relation_dict.keys():
-            K, K_inv = _np_mat2sp_adj(np.array(self.relation_dict[r_id]), row_pre=self.n_users, col_pre=self.n_users)
+            # K, K_inv = _np_mat2sp_adj(np.array(self.relation_dict[r_id]), row_pre=self.n_users, col_pre=self.n_users)
+            K, K_inv = _np_mat2sp_adj(np.array(self.relation_dict[r_id]), row_pre=0, col_pre=0) # for Rakuten data set
             adj_mat_list.append(K)
             adj_r_list.append(r_id + 1)
 
