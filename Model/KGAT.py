@@ -111,8 +111,8 @@ class KGAT(object):
 
         # dropout: node dropout (adopted on the ego-networks);
         # message dropout (adopted on the convolution operations).
-        self.node_dropout = tf.placeholder(tf.float32, shape=[None])
-        self.mess_dropout = tf.placeholder(tf.float32, shape=[None])
+        self.node_dropout = tf.placeholder(tf.float32, shape=[None], name='node_dropout')
+        self.mess_dropout = tf.placeholder(tf.float32, shape=[None], name='mess_dropout')
 
     def _build_weights(self):
         all_weights = dict()
