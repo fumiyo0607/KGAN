@@ -470,6 +470,6 @@ if __name__ == '__main__':
         }
     )
 
-    ensureDir('./accuracy/{}'.format(args.model_type))
-    acc_df.to_csv('./accuracy/{}/accuracy_{}.csv'.format(args.model_type, args.train_data), encoding='utf_8_sig')
+    ensureDir('./accuracy/{}/'.format(args.model_type))
+    acc_df.to_csv('./accuracy/{}/accuracy_{}.csv'.format(args.model_type, args.train_data))
     print('save accuracy data done')
