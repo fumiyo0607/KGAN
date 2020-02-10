@@ -15,8 +15,16 @@ class Data(object):
 
         self.batch_size = args.batch_size
 
-        train_file = path + '/train.txt'
-        test_file = path + '/test.txt'
+        # train data
+        if  args.train_data is not None:
+            train_file = path + args.train_data
+        else:
+            train_file = path + '/train.txt'
+        # test data
+        if args.test_data is not None:
+            test_file = path + args.test_data
+        else:
+            test_file = path + '/test.txt'
 
         kg_file = path + '/kg_final.txt'
 

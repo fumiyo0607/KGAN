@@ -5,6 +5,7 @@ Wang Xiang et al. KGAT: Knowledge Graph Attention Network for Recommendation. In
 @author: Xiang Wang (xiangwang@u.nus.edu)
 '''
 import tensorflow as tf
+import pandas as pd
 from utility.helper import *
 from utility.batch_test import *
 from time import time
@@ -20,6 +21,16 @@ from KGAT import KGAT
 import os
 import sys
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
+
+recall_20     = []
+recall_100    = []
+precision_20  = []
+precision_100 = []
+hit_ratio_20  = []
+hit_ratio_100 = []
+ndcg_20       = []
+ndcg_100      = []
+auc           = []
 
 def load_pretrained_data(args):
     pre_model = 'mf'
@@ -168,6 +179,16 @@ if __name__ == '__main__':
                                 ret['ndcg'][0], ret['ndcg'][-1], ret['auc'])
                 print(pretrain_ret)
 
+                recall_20     .append(ret['recall'][0])
+                recall_100    .append(ret['recall'][-1])
+                precision_20  .append(ret['precision'][0])
+                precision_100 .append(ret['precision'][-1])
+                hit_ratio_20  .append(ret['hit_ratio'][0])
+                hit_ratio_100 .append(ret['hit_ratio'][-1])
+                ndcg_20       .append(ret['ndcg'][0])
+                ndcg_100      .append(ret['ndcg'][-1])
+                auc           .append(ret['auc'])
+
                 # *********************************************************
                 # save the pretrained model parameters of mf (i.e., only user & item embeddings) for pretraining other models.
                 if args.save_flag == -1:
@@ -297,7 +318,7 @@ if __name__ == '__main__':
                 # updating attentive laplacian matrix.
                 A_matrix = model.update_attentive_A(sess)
 
-                save_path = '%s_attention_score/' % (args.dataset)
+                save_path = '%s_attention_score/%s' % (args.dataset, args.train_data)
                 ensureDir(save_path)
         
                 file_name = 'attention_score_epoch=%s.pickle' % (str(epoch))
@@ -348,6 +369,16 @@ if __name__ == '__main__':
         pre_loger.append(ret['precision'])
         ndcg_loger.append(ret['ndcg'])
         hit_loger.append(ret['hit_ratio'])
+
+        recall_20     .append(ret['recall'][0])
+        recall_100    .append(ret['recall'][-1])
+        precision_20  .append(ret['precision'][0])
+        precision_100 .append(ret['precision'][-1])
+        hit_ratio_20  .append(ret['hit_ratio'][0])
+        hit_ratio_100 .append(ret['hit_ratio'][-1])
+        ndcg_20       .append(ret['ndcg'][0])
+        ndcg_100      .append(ret['ndcg'][-1])
+        auc           .append(ret['auc'])
 
         if args.verbose > 0:
             perf_str = 'Epoch %d [%.1fs + %.1fs]: train==[%.5f=%.5f + %.5f + %.5f], recall=[%.5f, %.5f], ' \
@@ -409,3 +440,36 @@ if __name__ == '__main__':
     f.write('embed_size=%d, lr=%.4f, layer_size=%s, node_dropout=%s, mess_dropout=%s, regs=%s, adj_type=%s, use_att=%s, use_kge=%s, pretrain=%d\n\t%s\n'
             % (args.embed_size, args.lr, args.layer_size, args.node_dropout, args.mess_dropout, args.regs, args.adj_type, args.use_att, args.use_kge, args.pretrain, final_perf))
     f.close()
+
+    """
+    *********************************************************
+    Save accuracy data.
+    """
+
+    recall_20     .append(ret['recall'][0])
+    recall_100    .append(ret['recall'][-1])
+    precision_20  .append(ret['precision'][0])
+    precision_100 .append(ret['precision'][-1])
+    hit_ratio_20  .append(ret['hit_ratio'][0])
+    hit_ratio_100 .append(ret['hit_ratio'][-1])
+    ndcg_20       .append(ret['ndcg'][0])
+    ndcg_100      .append(ret['ndcg'][-1])
+    auc           .append(ret['auc'])
+
+    acc_df = pd.DataFrame(
+        data = {
+            'recall_20'     : recall_20,
+            'recall_100'    : recall_100,
+            'precision_20'  : precision_20,
+            'precision_100' : precision_100,
+            'hit_ratio_20'  : hit_ratio_20,
+            'hit_ratio_100' : hit_ratio_100,
+            'ndcg_20'       : ndcg_20,
+            'ndcg_100'      : ndcg_100,
+            'auc'           : auc 
+        }
+    )
+
+    ensureDir('./accuracy/{}'.format(args.model_type))
+    acc_df.to_csv('./accuracy/{}/accuracy_{}.csv'.format(args.model_type, args.train_data), encoding='utf_8_sig')
+    print('save accuracy data done')

@@ -75,4 +75,9 @@ def parse_args():
     parser.add_argument('--use_kge', type=bool, default=True,
                         help='whether using knowledge graph embedding')
 
+    parser.add_argument('--train_data', type=str, default='train',
+                        help='name of tain data set')
+    parser.add_argument('--test_data', type=str, default='test',
+                        help='name of test data set')
+
     return parser.parse_args()
