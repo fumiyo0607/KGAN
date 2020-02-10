@@ -17,12 +17,12 @@ class Data(object):
 
         # train data
         if  args.train_data is not None:
-            train_file = path + '/' + args.train_data
+            train_file = path + '/' + args.train_data + '.txt'
         else:
             train_file = path + '/train.txt'
         # test data
         if args.test_data is not None:
-            test_file = path + '/' + args.test_data
+            test_file = path + '/' + args.test_data + '.txt'
         else:
             test_file = path + '/test.txt'
 
