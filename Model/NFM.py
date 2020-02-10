@@ -29,8 +29,7 @@ class NFM(object):
         self.n_items = data_config['n_items']
         self.n_entities = data_config['n_entities']
 
-        self.n_features = data_config['n_entities']
-        # self.n_features = data_config['n_users'] + data_config['n_entities']
+        self.n_features = data_config['n_users'] + data_config['n_entities']
 
         self.lr = args.lr
         # settings for CF part.
