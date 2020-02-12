@@ -89,7 +89,7 @@ class Data(object):
         # self.n_relations = len(set(kg_np[:, 1]))
         # self.n_entities = len(set(kg_np[:, 0]) | set(kg_np[:, 2]))
         self.n_relations = max(kg_np[:, 1]) + 1
-        self.n_entities = max(max(kg_np[:, 0]), max(kg_np[:, 2])) + 1
+        self.n_entities = max(max(kg_np[:, 0]), max(kg_np[:, 2])) + 1  - self.n_users
         self.n_triples = len(kg_np)
 
         kg_dict, relation_dict = _construct_kg(kg_np)

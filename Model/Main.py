@@ -393,8 +393,8 @@ if __name__ == '__main__':
 
         # *********************************************************
         # early stopping when cur_best_pre_0 is decreasing for ten successive steps.
-        if should_stop == True:
-            break
+        # if should_stop == True:
+        #     break
 
         # *********************************************************
         # save the user & item embeddings for pretraining.
@@ -422,20 +422,20 @@ if __name__ == '__main__':
     Save params as np.
     """
 
-    user_embed, entity_embed, relation_embed, trans_W_embed = sess.run(
-                        [model.weights['user_embed'], model.weights['entity_embed'], model.weights['relation_embed'], model.weights['trans_W']],
-                        feed_dict={})
+    if args.model_type == 'kgat':
+        user_embed, entity_embed, relation_embed, trans_W_embed = sess.run(
+                            [model.weights['user_embed'], model.weights['entity_embed'], model.weights['relation_embed'], model.weights['trans_W']],
+                            feed_dict={})
 
-    temp_save_path = '%sprams/%s/%s.npz' % (args.proj_path, args.dataset, args.model_type)
-    ensureDir(temp_save_path)
-    np.savez(temp_save_path, user_embed=user_embed, entity_embed=entity_embed, relation_embed=relation_embed, trans_W_embed=trans_W_embed)
-    print('save the weights of kgat in path: ', temp_save_path)
-                
+        temp_save_path = '%sprams/%s/%s.npz' % (args.proj_path, args.dataset, args.model_type)
+        ensureDir(temp_save_path)
+        np.savez(temp_save_path, user_embed=user_embed, entity_embed=entity_embed, relation_embed=relation_embed, trans_W_embed=trans_W_embed)
+        print('save the weights of kgat in path: ', temp_save_path)
+                    
 
     save_path = '%soutput/%s/%s.result' % (args.proj_path, args.dataset, model.model_type)
     ensureDir(save_path)
     f = open(save_path, 'a')
-
 
     f.write('embed_size=%d, lr=%.4f, layer_size=%s, node_dropout=%s, mess_dropout=%s, regs=%s, adj_type=%s, use_att=%s, use_kge=%s, pretrain=%d\n\t%s\n'
             % (args.embed_size, args.lr, args.layer_size, args.node_dropout, args.mess_dropout, args.regs, args.adj_type, args.use_att, args.use_kge, args.pretrain, final_perf))

@@ -17,7 +17,13 @@ class NFM_loader(Data):
         self.kg_feat_mat = self.get_kg_feature(kg_feat_file)
 
         # generate the one-hot sparse matrix for the users.
-        self.user_one_hot = sp.identity(self.n_users).tocsr()
+        # self.user_one_hot = sp.identity(self.n_users).tocsr()
+
+        # generate the sparse matrix for users features.
+        self.user_feat_mat = self._create_user_feat_mat()
+
+        # for Raluten Data set.
+        self.user_attribute_num = 14
 
     def get_kg_feature(self, kg_feat_file):
         try:
@@ -28,6 +34,35 @@ class NFM_loader(Data):
             sp.save_npz(kg_feat_file, kg_feat_mat)
             print('already save item kg feature mat:', kg_feat_file)
         return kg_feat_mat
+
+
+    def _create_user_feat_mat(self):
+        cat_rows = []
+        cat_cols = []
+        cat_data = []
+
+        for u_id in range(self.n_users):
+            # One-hot encoding for users.
+            cat_rows.append(u_id)
+            cat_cols.append(u_id)
+            cat_data.append(1)
+
+            # Multi-hot encoding for kg features of users.
+            if (u_id + self.n_users) not in self.kg_dict.keys(): continue
+            triples = self.kg_dict[u_id]
+            for trip in triples:
+                # ... only consider the tail entities.
+                t_id = trip[0]
+                attribute_id = t_id - (self.n_entities - self.user_attribute_num) + self.n_users 
+                # ... relations are ignored.
+                r_id = trip[1]
+
+                cat_rows.append(u_id)
+                cat_cols.append(attribute_id)
+                cat_data.append(1.)
+
+        user_feat_mat = sp.coo_matrix((cat_data, (cat_rows, cat_cols)), shape=(self.n_users, self.n_users + self.user_attribute_num)).tocsr()
+        return user_feat_mat
 
     def _create_kg_feat_mat(self):
         cat_rows = []
@@ -41,11 +76,11 @@ class NFM_loader(Data):
             cat_data.append(1)
 
             # Multi-hot encoding for kg features of items.
-            if i_id not in self.kg_dict.keys(): continue
-            triples = self.kg_dict[i_id]
+            if (i_id + self.n_users) not in self.kg_dict.keys(): continue
+            triples = self.kg_dict[i_id + self.n_users]
             for trip in triples:
                 # ... only consider the tail entities.
-                t_id = trip[0]
+                t_id = trip[0] - self.n_users
                 # ... relations are ignored.
                 r_id = trip[1]
 
@@ -53,13 +88,15 @@ class NFM_loader(Data):
                 cat_cols.append(t_id)
                 cat_data.append(1.)
 
-        kg_feat_mat = sp.coo_matrix((cat_data, (cat_rows, cat_cols)), shape=(self.n_items, self.n_entities)).tocsr()
+        # ingore user features
+        kg_feat_mat = sp.coo_matrix((cat_data, (cat_rows, cat_cols)), shape=(self.n_items, self.n_entities - self.user_attribute_num)).tocsr()
         return kg_feat_mat
 
     def generate_train_batch(self):
 
         users, pos_items, neg_items = self._generate_train_cf_batch()
-        u_sp = self.user_one_hot[users]
+        # TODO: ここをユーザの属性も入れる
+        u_sp = self.user_feat_mat[users]
         pos_i_sp = self.kg_feat_mat[pos_items]
         neg_i_sp = self.kg_feat_mat[neg_items]
 
@@ -103,7 +140,8 @@ class NFM_loader(Data):
         user_list = np.repeat(user_batch, len(item_batch)).tolist()
         item_list = list(item_batch) * len(user_batch)
 
-        u_sp = self.user_one_hot[user_list]
+        # TODO: ここをユーザの属性も入れる
+        u_sp = self.user_feat_mat[user_list]
         pos_i_sp = self.kg_feat_mat[item_list]
 
         # Horizontally stack sparse matrices to get single positive & negative feature matrices
