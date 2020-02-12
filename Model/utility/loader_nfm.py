@@ -53,7 +53,7 @@ class NFM_loader(Data):
             for trip in triples:
                 # ... only consider the tail entities.
                 t_id = trip[0]
-                attribute_id = t_id - (self.n_entities - self.user_attribute_num) + self.n_users 
+                attribute_id = t_id - self.n_entities + self.user_attribute_num 
                 # ... relations are ignored.
                 r_id = trip[1]
 
